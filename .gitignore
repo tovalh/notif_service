@@ -1,0 +1,4 @@
+.env
+/notif_service
+.idea/
+*.md
