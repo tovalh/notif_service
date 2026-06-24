@@ -50,14 +50,20 @@ func (h *Hub) unregister(key clientKey, conn *websocket.Conn) {
 	}
 }
 
-func (h *Hub) send(key clientKey, msg []byte) {
+// send writes msg to every connection registered under key and returns how
+// many connections actually received it (0 means nobody is connected).
+func (h *Hub) send(key clientKey, msg []byte) int {
 	h.mu.Lock()
 	conns := h.clients[key]
 	h.mu.Unlock()
 
+	delivered := 0
 	for _, c := range conns {
 		if err := c.WriteMessage(websocket.TextMessage, msg); err != nil {
-			log.Printf("Failed to send message to client: %v", err)
+			log.Printf("hub: fallo al escribir a un cliente: %v", err)
+			continue
 		}
+		delivered++
 	}
+	return delivered
 }
