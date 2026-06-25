@@ -10,10 +10,10 @@ import (
 
 // Config holds all the service settings.
 type Config struct {
-	DBDSN       string // MySQL connection string
-	WSAddr      string // listen address, e.g. ":8081"
-	WSSecret    string // shared secret to validate tokens
-	PollSeconds int    // how often to poll the DB
+	DBDSNs      []string // una o más conexiones MySQL (una por BD a vigilar)
+	WSAddr      string   // listen address, e.g. ":8081"
+	WSSecret    string   // shared secret to validate tokens
+	PollSeconds int      // how often to poll the DB
 }
 
 // loadConfig reads the env vars and builds a Config.
@@ -22,11 +22,28 @@ func loadConfig() Config {
 	_ = godotenv.Load()
 
 	return Config{
-		DBDSN:       os.Getenv("DB_DSN"),
+		DBDSNs:      collectDSNs(),
 		WSAddr:      envOr("WS_ADDR", ":8081"),
 		WSSecret:    mustGet("WS_SECRET"),
 		PollSeconds: envIntOr("POLL_SECONDS", 5),
 	}
+}
+
+// collectDSNs junta los DSN definidos: DB_DSN (principal) y DB_DSN_2..DB_DSN_4.
+// Los vacíos se ignoran, así puedes agregar BDs cuando las necesites sin tocar
+// el código: basta con rellenar la variable de entorno. Exige al menos uno.
+func collectDSNs() []string {
+	keys := []string{"DB_DSN", "DB_DSN_2", "DB_DSN_3", "DB_DSN_4"}
+	var out []string
+	for _, k := range keys {
+		if v := os.Getenv(k); v != "" {
+			out = append(out, v)
+		}
+	}
+	if len(out) == 0 {
+		log.Fatalf("config: no hay ninguna DB_DSN definida (revisa DB_DSN / DB_DSN_2..4)")
+	}
+	return out
 }
 
 // envOr returns the env var, or def if empty.

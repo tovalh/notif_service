@@ -11,15 +11,16 @@ type Poller struct {
 	db     *sql.DB
 	hub    *Hub
 	cursor int
+	label  string // identifica la BD en los logs, ej. "BD 1"
 }
 
-func newPoller(db *sql.DB, hub *Hub, startCursor int) *Poller {
-	return &Poller{db: db, hub: hub, cursor: startCursor}
+func newPoller(db *sql.DB, hub *Hub, startCursor int, label string) *Poller {
+	return &Poller{db: db, hub: hub, cursor: startCursor, label: label}
 }
 
 // pollOnce queries new rows and pushes a ding-dong for each.
 func (p *Poller) pollOnce() {
-	log.Printf("Poll: revisando BD (cursor = %d)", p.cursor)
+	log.Printf("[%s] revisando (cursor = %d)", p.label, p.cursor)
 
 	rows, err := p.db.Query(
 		`SELECT idusu_notificacion, idgen_empresa, idusu_usuario
@@ -44,15 +45,15 @@ func (p *Poller) pollOnce() {
 
 		msg := []byte(fmt.Sprintf(`{"tipo":"notif","id":%d}`, id))
 		delivered := p.hub.send(clientKey{empresa: empresa, usuario: usuario}, msg)
-		log.Printf("poll: notif nueva %d -> (empresa %d, usuario %d): entregada a %d conexión(es)", id, empresa, usuario, delivered)
+		log.Printf("[%s] notif nueva %d -> (empresa %d, usuario %d): entregada a %d conexión(es)", p.label, id, empresa, usuario, delivered)
 
 		p.cursor = id // rows come ASC, so the last one is the new max
 	}
 
 	if found == 0 {
-		log.Printf("poll: sin notificaciones nuevas")
+		log.Printf("[%s] sin notificaciones nuevas", p.label)
 	} else {
-		log.Printf("poll: %d notificación(es) nueva(s), cursor ahora = %d", found, p.cursor)
+		log.Printf("[%s] %d notificación(es) nueva(s), cursor ahora = %d", p.label, found, p.cursor)
 	}
 }
 
