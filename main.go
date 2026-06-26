@@ -44,7 +44,8 @@ func main() {
 
 	// Health endpoint.
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "ok")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"ok"}`))
 	})
 
 	http.HandleFunc("/ws", hub.handleWS)
