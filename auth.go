@@ -26,6 +26,8 @@ type tokenPayload struct {
 //	token = base64url(HMAC_SHA256(payloadJSON, secret)) + "." + base64url(payloadJSON)
 //
 // base64url uses the -_ alphabet with no padding, matching PHP/JS.
+// TODO(tests): casos de ParseToken: token válido, firma inválida, token expirado,
+// formato mal formado (sin '.') y payload que no es JSON.
 func ParseToken(token, secret string) (usuario, empresa int, err error) {
 	// 1) A valid token is exactly "signature.payload".
 	parts := strings.Split(token, ".")
