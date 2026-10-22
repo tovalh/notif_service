@@ -18,6 +18,8 @@ type Hub struct {
 	secret  string // shared secret used to validate connection tokens
 }
 
+// TODO(tests): register/unregister/send concurrentes con `go test -race`; send solo
+// debe llegar a las conexiones del (empresa, usuario) correcto.
 func newHub(secret string) *Hub {
 	return &Hub{
 		clients: make(map[clientKey][]*websocket.Conn),
